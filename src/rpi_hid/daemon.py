@@ -30,12 +30,22 @@ class HIDDaemon:
         """Implements injection sequences for different OS flavors."""
         
         if self.os_mode == "windows":
-            # Windows: Hold Alt and type decimal digits on Numpad
-            decimal_str = str(codepoint)
-            for digit in decimal_str:
-                # Every digit report must keep Alt (0x04) active [cite: 81, 82]
-                report = self.layout.get_numpad_report(digit, self.layout.MOD_ALT)
-                self._write_report(report)
+            # Strategy: Universal Hex Numpad (Requires EnableHexNumpad Registry Key)
+            # This bypasses Codepage 950 / Big5 issues by using raw Unicode.
+            
+            # 1. Trigger: Press Alt + Numpad '+' (Scan code 0x57)
+            # We use a raw report build to ensure Alt is held during the '+' press.
+            self._write_report(self.layout._build_report(self.layout.MOD_ALT, 0x57))
+            
+            # 2. Sequence: Type Hex digits while continuing to hold Alt
+            for h in f"{codepoint:04x}":
+                # Retrieve the standard scan code for the hex digit (0-9, a-f)
+                # and wrap it in a report where MOD_ALT is still active.
+                _, code = self.layout.ASCII_MAP[h]
+                self._write_report(self.layout._build_report(self.layout.MOD_ALT, code))
+                
+            # Release of Alt happens automatically via the NULL_REPORT 
+            # inside the final _write_report call.
                 
         elif self.os_mode == "linux":
             # Linux: Ctrl+Shift+U, hex code, then Enter
