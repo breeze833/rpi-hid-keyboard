@@ -1,0 +1,9 @@
+[project]
+name = "rpi-hid-keyboard"
+version = "0.1.0"
+description = "A Unix socket daemon to bridge STT strings to RPi4 HID hardware."
+dependencies = []
+
+[project.scripts]
+# This creates the command that systemd will call
+hid-keyboard-daemon = "rpi_hid.cli:main"
