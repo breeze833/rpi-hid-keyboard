@@ -48,7 +48,8 @@ class USBKeyboardLayout:
         # --- Numpad Scan Codes for Windows Strategy B --- 
         self.NUMPAD_MAP = {
             '0': 0x62, '1': 0x59, '2': 0x5a, '3': 0x5b, '4': 0x5c,
-            '5': 0x5d, '6': 0x5e, '7': 0x5f, '8': 0x60, '9': 0x61
+            '5': 0x5d, '6': 0x5e, '7': 0x5f, '8': 0x60, '9': 0x61,
+            '+': 0x57
         }
 
     def get_report(self, char):

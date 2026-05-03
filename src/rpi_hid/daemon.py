@@ -35,13 +35,16 @@ class HIDDaemon:
             
             # 1. Trigger: Press Alt + Numpad '+' (Scan code 0x57)
             # We use a raw report build to ensure Alt is held during the '+' press.
-            self._write_report(self.layout._build_report(self.layout.MOD_ALT, 0x57))
+            self._write_report(self.layout._build_report(self.layout.MOD_ALT, self.layout.NUMPAD_MAP['+']))
             
             # 2. Sequence: Type Hex digits while continuing to hold Alt
             for h in f"{codepoint:04x}":
                 # Retrieve the standard scan code for the hex digit (0-9, a-f)
                 # and wrap it in a report where MOD_ALT is still active.
-                _, code = self.layout.ASCII_MAP[h]
+                if h in self.layout.NUMPAD_MAP:
+                    code = self.layout.NUMPAD_MAP[h]
+                else:
+                    _, code = self.layout.ASCII_MAP[h]
                 self._write_report(self.layout._build_report(self.layout.MOD_ALT, code))
                 
             # Release of Alt happens automatically via the NULL_REPORT 
