@@ -95,7 +95,6 @@ Using the following PowerShell command to activate it:
 ```
 Set-ItemProperty -Path "HKCU:\Control Panel\Input Method" -Name "EnableHexNumpad" -Value "1" -Type String
 ```
-
 The injection is good but still under testing.
 
 ### Linux (`CMD:MODE:LINUX`)
