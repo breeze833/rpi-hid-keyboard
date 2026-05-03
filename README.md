@@ -86,6 +86,10 @@ This repository is organized for modularity and professional scalability:
 ## Host Configuration and Status
 
 I develop this project mainly for my own environments.
+Note that the device sends HID reports that triggers the unicode character input.
+If the receiving application has its own special handling of the emulated keystrokes,
+this may produce undesired results.
+
 Here are my tested configurations.
 
 ### Windows (`CMD:MODE:WINDOWS`)
