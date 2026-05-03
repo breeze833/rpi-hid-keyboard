@@ -14,7 +14,7 @@ into precise 8-byte HID reports for the Linux USB gadget driver (`/dev/hidg0`).
 
 * **Universal Compatibility**: Bypasses OS-level software hurdles; works on any system that accepts a standard USB keyboard, including BIOS screens or locked-down corporate environments.
 * **Multi-Platform Unicode Support**: Automatically handles complex injection sequences for different operating systems:
-    * **Windows**: Alt + Hex sequences. (Require registry modification)
+    * **Windows**: Alt + '+' + Hex sequences. (Require registry modification)
     * **Linux (Gnome/Wayland)**: Ctrl+Shift+U hex sequences.
     * **macOS**: Option + 4-digit Hex sequences.
 * **High-Efficiency Daemon**: Uses a Unix domain socket for near-zero IPC overhead and centralized keyboard state management.
@@ -83,10 +83,27 @@ This repository is organized for modularity and professional scalability:
 * **`src/rpi_hid/daemon.py`**: The core `HIDDaemon` logic managing timing and OS-specific injection.
 * **`src/rpi_hid/cli.py`**: A thin wrapper providing the `hid-keyboard-daemon` entry point.
 
-## Windows Registry For Universal Unicode Injection
+## Host Configuration and Status
 
-The most stable unicode injection in Windows is to activate the `EnableHexNumpad`.
+I develop this project mainly for my own environments.
+Here are my tested configurations.
+
+### Windows (`CMD:MODE:WINDOWS`)
+
+The tested environment is Windows 11. The most stable unicode injection in Windows is to activate the `EnableHexNumpad`.
 Using the following PowerShell command to activate it:
 ```
 Set-ItemProperty -Path "HKCU:\Control Panel\Input Method" -Name "EnableHexNumpad" -Value "1" -Type String
 ```
+
+The injection is good but still under testing.
+
+### Linux (`CMD:MODE:LINUX`)
+
+I have Debian Trixie Wayland Gnome as my working desktop.
+So far it works.
+
+### MacOS (`CMD:MODE:MACOS`)
+
+I don't have a Mac. The code is based on some related discussions.
+No guarantee for this part.

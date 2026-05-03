@@ -11,18 +11,16 @@ class HIDDaemon:
         self.layout = USBKeyboardLayout()
         self.hid_handle = None
 
-    def _write_report(self, report_bytes):
+    def _write_null_report(self):
+        self._write_report(self.layout.get_null_report())
+        
+    def _write_report(self, report_bytes, delay=0.01):
         """Writes the 8-byte report and handles the critical 10ms delay."""
         try:
             self.hid_handle.write(report_bytes)
             self.hid_handle.flush()
-            # 10ms delay to prevent overwhelming host buffer
-            time.sleep(0.01)
-            
-            # Immediately send null report to prevent auto-repeat
-            self.hid_handle.write(self.layout.get_null_report())
-            self.hid_handle.flush()
-            time.sleep(0.01)
+            # delay to prevent overwhelming host buffer
+            time.sleep(delay)
         except Exception as e:
             print(f"HID Write Error: {e}")
 
@@ -33,22 +31,25 @@ class HIDDaemon:
             # Strategy: Universal Hex Numpad (Requires EnableHexNumpad Registry Key)
             # This bypasses Codepage 950 / Big5 issues by using raw Unicode.
             
+            # Trick: All the key presses/releases should keep Alt down
+            
             # 1. Trigger: Press Alt + Numpad '+' (Scan code 0x57)
-            # We use a raw report build to ensure Alt is held during the '+' press.
             self._write_report(self.layout._build_report(self.layout.MOD_ALT, self.layout.NUMPAD_MAP['+']))
+            self._write_report(self.layout._build_report(self.layout.MOD_ALT, 0x00))
             
             # 2. Sequence: Type Hex digits while continuing to hold Alt
             for h in f"{codepoint:04x}":
                 # Retrieve the standard scan code for the hex digit (0-9, a-f)
                 # and wrap it in a report where MOD_ALT is still active.
-                if h in self.layout.NUMPAD_MAP:
+                if h.isdigit():
                     code = self.layout.NUMPAD_MAP[h]
                 else:
                     _, code = self.layout.ASCII_MAP[h]
                 self._write_report(self.layout._build_report(self.layout.MOD_ALT, code))
+                self._write_report(self.layout._build_report(self.layout.MOD_ALT, 0x00))
                 
-            # Release of Alt happens automatically via the NULL_REPORT 
-            # inside the final _write_report call.
+            # Release of Alt via the NULL_REPORT 
+            self._write_null_report()
                 
         elif self.os_mode == "linux":
             # Linux: Ctrl+Shift+U, hex code, then Enter
@@ -56,13 +57,16 @@ class HIDDaemon:
             trigger_mod = self.layout.MOD_CTRL | self.layout.MOD_SHIFT
             _, u_code = self.layout.ASCII_MAP['u']
             self._write_report(self.layout._build_report(trigger_mod, u_code))
+            self._write_null_report()
             
             # 2. Send Hex digits (no modifiers)
             for h in f"{codepoint:x}":
                 self._write_report(self.layout.get_report(h))
+                self._write_null_report()
                 
             # 3. Finalize with Enter
             self._write_report(self.layout.get_report('\n'))
+            self._write_null_report();
             
         elif self.os_mode == "macos":
             # macOS: Hold Option (Alt) and type 4-digit hex
@@ -72,6 +76,9 @@ class HIDDaemon:
                 # Apply Option (MOD_ALT) to the hex digit report
                 mod, code = self.layout.ASCII_MAP[h]
                 self._write_report(self.layout._build_report(self.layout.MOD_ALT, code))
+                self._write_report(self.layout._build_report(self.layout.MOD_ALT, 0x00))
+            # release Alt key after the input sequence
+            self._write_null_report()
 
     def type_string(self, text):
         """Iterates through text and chooses the correct input path."""
@@ -81,6 +88,7 @@ class HIDDaemon:
             if cp < 128 and char in self.layout.ASCII_MAP:
                 report = self.layout.get_report(char)
                 self._write_report(report)
+                self._write_null_report()
             # Path 2: Strategy B (Multilingual Injection)
             else:
                 self.inject_unicode(cp)
@@ -105,8 +113,10 @@ class HIDDaemon:
             try:
                 data = conn.recv(1024).decode('utf-8').strip()
                 if data.startswith("CMD:MODE:"):
-                    self.os_mode = data.split(":")[-1].lower()
-                    print(f"Switched mode to: {self.os_mode}")
+                    os_mode = data.split(':')[-1].lower()
+                    if os_mode in ['windows','linux','macos']:
+                        self.os_mode = os_mode
+                        print(f"Switched mode to: {self.os_mode}")
                 elif data.startswith("TEXT:"):
                     self.type_string(data[5:])
             except Exception as e:
