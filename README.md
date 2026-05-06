@@ -112,5 +112,5 @@ I don't have a Mac. The code is based on some related discussions.
 No guarantee for this part.
 
 ## Story of the Project
-* [The Hardware Hand: Building a Sovereign USB HID Bridge with Raspberry Pi](https://medium.com/@breeze833/fc56a888c7fd)
-* [硬體之手：利用 Raspberry Pi 打造具備主權的 USB HID 鍵盤橋接器](https://medium.com/@breeze833/eff4dff90648)
+* [Physical Text Injection: Turning a Raspberry Pi into a Sovereign Input Device](https://medium.com/@breeze833/the-hardware-hand-fc56a888c7fd)
+* [實體文字注入：將 Raspberry Pi 轉化為具備主權的輸入裝置]https://medium.com/@breeze833/硬體之手-eff4dff90648
