@@ -103,22 +103,42 @@ class HIDDaemon:
         
         server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server.bind(self.socket_path)
-        os.chmod(self.socket_path, 0o666) # Allow access from user-land services [cite: 57, 137]
+        os.chmod(self.socket_path, 0o666) # Allow access from user-land services
         server.listen(1)
         
         print(f"HID Daemon started. Mode: {self.os_mode}")
 
         while True:
             conn, _ = server.accept()
+            buffer = ""
             try:
-                data = conn.recv(1024).decode('utf-8').strip()
-                if data.startswith("CMD:MODE:"):
-                    os_mode = data.split(':')[-1].lower()
-                    if os_mode in ['windows','linux','macos']:
-                        self.os_mode = os_mode
-                        print(f"Switched mode to: {self.os_mode}")
-                elif data.startswith("TEXT:"):
-                    self.type_string(data[5:])
+                while True:
+                    chunk = conn.recv(1024).decode('utf-8')
+                    if not chunk:
+                        break
+                    
+                    buffer += chunk
+                    
+                    while "\n" in buffer:
+                        line, buffer = buffer.split("\n", 1)
+                        # We don't strip() here because we want to preserve 
+                        # leading/trailing spaces for a "Generic" bridge.
+                        
+                        if not line and not buffer: # Handle empty lines
+                            self.type_string("\n")
+                            continue
+                        
+                        # Route: Explicit Commands
+                        if line.startswith("CMD:MODE:"):
+                            new_mode = line.split(':')[-1].lower()
+                            if new_mode in ['windows', 'linux', 'macos']:
+                                self.os_mode = new_mode
+                                print(f"Switched mode to: {self.os_mode}")
+                        
+                        # Route: Implicit Text (the string PLUS the newline)
+                        else:
+                            self.type_string(line+"\n")
+
             except Exception as e:
                 print(f"Communication error: {e}")
             finally:

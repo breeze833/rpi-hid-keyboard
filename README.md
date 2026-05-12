@@ -73,7 +73,11 @@ Interact with the daemon via the Unix socket using `nc` or any application capab
 	```
 * **Send Text to Type**:
     ```bash
-    echo "TEXT:Hello, world!" | nc -U /tmp/hid_keyboard.sock
+    echo "Hello, world!" | nc -U /tmp/hid_keyboard.sock
+    ```
+* **Send Multi-line Text to Type**:
+    ```bash
+    echo -e "Hello, world!\n你好\n" | nc -U /tmp/hid_keyboard.sock
     ```
 ## Project Structure
 
