@@ -64,20 +64,21 @@ systemctl --user enable --now hid-keyboard.service
 ```
 
 ## Usage
+There are two types of input messages. No matter a message is a command or a regular string, the **null-delimiter** is the signal for the virtual keyboard to type the output.
 
 Interact with the daemon via the Unix socket using `nc` or any application capable of writing to a socket:
 
 * **Set Target OS Mode**:
     ```bash
-    echo "CMD:MODE:WINDOWS" | nc -U /tmp/hid_keyboard.sock
+    echo -ne "CMD:MODE:WINDOWS\0" | nc -U /tmp/hid_keyboard.sock
 	```
 * **Send Text to Type**:
     ```bash
-    echo "Hello, world!" | nc -U /tmp/hid_keyboard.sock
+    echo -ne "Hello, world.\0" | nc -U /tmp/hid_keyboard.sock
     ```
 * **Send Multi-line Text to Type**:
     ```bash
-    echo -e "Hello, world!\n你好\n" | nc -U /tmp/hid_keyboard.sock
+    echo -ne "Hello, world.\n\0你好\n\0" | nc -U /tmp/hid_keyboard.sock
     ```
 ## Project Structure
 

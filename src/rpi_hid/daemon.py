@@ -119,13 +119,12 @@ class HIDDaemon:
                     
                     buffer += chunk
                     
-                    while "\n" in buffer:
-                        line, buffer = buffer.split("\n", 1)
+                    while "\0" in buffer:
+                        line, buffer = buffer.split("\0", 1)
                         # We don't strip() here because we want to preserve 
                         # leading/trailing spaces for a "Generic" bridge.
                         
-                        if not line and not buffer: # Handle empty lines
-                            self.type_string("\n")
+                        if not line: # Handle empty lines
                             continue
                         
                         # Route: Explicit Commands
@@ -135,9 +134,9 @@ class HIDDaemon:
                                 self.os_mode = new_mode
                                 print(f"Switched mode to: {self.os_mode}")
                         
-                        # Route: Implicit Text (the string PLUS the newline)
+                        # Route: Implicit Text
                         else:
-                            self.type_string(line+"\n")
+                            self.type_string(line)
 
             except Exception as e:
                 print(f"Communication error: {e}")
