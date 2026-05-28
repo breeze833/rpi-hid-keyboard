@@ -133,21 +133,14 @@ class HIDDaemon:
             self.hid_handle = open(self.device_path, "wb+")
 
         try:
-            while True:
-                if self.socket_path != '-':
-                    self._socket_conn, _ = server.accept()
-                else:
-                    if sys.stdin.closed:
-                        break
-                buffer = ""
+            is_serving = True
+            while is_serving:
                 try:
+                    if self.socket_path != '-':
+                        self._socket_conn, _ = server.accept()
+                    buffer = ""
                     while True:
-                        chunk = self.read_input()
-                        if not chunk:
-                            break
-                        
-                        buffer += chunk
-                        
+                        buffer += self.read_input()
                         while "\0" in buffer:
                             line, buffer = buffer.split("\0", 1)
                             # We don't strip() here because we want to preserve 
@@ -168,10 +161,15 @@ class HIDDaemon:
                                 self.type_string(line)
                 except Exception as e:
                     print(f"Error: {e}", file=sys.stderr)
+                except KeyboardInterrupt:
+                    print('Terminated', file=sys.stderr)
+                    is_serving = False
                 finally:
                     if self.socket_path == '-':
-                        sys.stdin.close()
+                        # assume stdin cannot be reconnected
+                        is_serving = False
                     if self._socket_conn:
+                        # clear for being reconnected
                         self._socket_conn.close()
                         self._socket_conn = None
         finally:
