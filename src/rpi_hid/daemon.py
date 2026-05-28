@@ -1,5 +1,6 @@
 import socket
 import os
+import sys
 import time
 from .layout import USBKeyboardLayout
 
@@ -22,7 +23,7 @@ class HIDDaemon:
             # delay to prevent overwhelming host buffer
             time.sleep(delay)
         except Exception as e:
-            print(f"HID Write Error: {e}")
+            print(f"HID Write Error: {e}", file=sys.stderr)
 
     def inject_unicode(self, codepoint):
         """Implements injection sequences for different OS flavors."""
@@ -98,50 +99,60 @@ class HIDDaemon:
         if os.path.exists(self.socket_path):
             os.remove(self.socket_path)
 
-        # Open the HID device; requires correct permissions (group 'input')
-        self.hid_handle = open(self.device_path, "wb+")
+        if self.device_path == '-':
+            self.hid_handle = sys.stdout.buffer
+        else:
+            # Open the HID device; requires correct permissions (group 'input')
+            self.hid_handle = open(self.device_path, "wb+")
         
         server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server.bind(self.socket_path)
         os.chmod(self.socket_path, 0o666) # Allow access from user-land services
         server.listen(1)
         
-        print(f"HID Daemon started. Mode: {self.os_mode}")
+        print(f"HID Daemon started. Mode: {self.os_mode}", file=sys.stderr)
 
-        while True:
-            conn, _ = server.accept()
-            buffer = ""
-            try:
-                while True:
-                    chunk = conn.recv(1024).decode('utf-8')
-                    if not chunk:
-                        break
+        try:
+            while True:
+                conn, _ = server.accept()
+                buffer = ""
+                try:
+                    while True:
+                        chunk = conn.recv(1024)
+                        if not chunk:
+                            break
+                        
+                        buffer += chunk.decode('utf-8', errors='ignore')
+                        
+                        while "\0" in buffer:
+                            line, buffer = buffer.split("\0", 1)
+                            # We don't strip() here because we want to preserve 
+                            # leading/trailing spaces for a "Generic" bridge.
+                            
+                            if not line: # Handle empty lines
+                                continue
+                            
+                            # Route: Explicit Commands
+                            if line.startswith("CMD:MODE:"):
+                                new_mode = line.split(':')[-1].lower()
+                                if new_mode in ['windows', 'linux', 'macos']:
+                                    self.os_mode = new_mode
+                                    print(f"Switched mode to: {self.os_mode}", file=sys.stderr)
+                            
+                            # Route: Implicit Text
+                            else:
+                                self.type_string(line)
                     
-                    buffer += chunk
-                    
-                    while "\0" in buffer:
-                        line, buffer = buffer.split("\0", 1)
-                        # We don't strip() here because we want to preserve 
-                        # leading/trailing spaces for a "Generic" bridge.
-                        
-                        if not line: # Handle empty lines
-                            continue
-                        
-                        # Route: Explicit Commands
-                        if line.startswith("CMD:MODE:"):
-                            new_mode = line.split(':')[-1].lower()
-                            if new_mode in ['windows', 'linux', 'macos']:
-                                self.os_mode = new_mode
-                                print(f"Switched mode to: {self.os_mode}")
-                        
-                        # Route: Implicit Text
-                        else:
-                            self.type_string(line)
-
-            except Exception as e:
-                print(f"Communication error: {e}")
-            finally:
-                conn.close()
+                except Exception as e:
+                    print(f"Communication error: {e}", file=sys.stderr)
+                finally:
+                    conn.close()
+        finally:
+            # Clean up file handlers unless it's a persistent standard stream
+            if self.hid_handle and self.device_path != "-":
+                print("Closing hardware file descriptor.", file=sys.stderr)
+                self.hid_handle.close()
+            server.close()
 
 if __name__ == "__main__":
     daemon = HIDDaemon()

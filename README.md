@@ -66,7 +66,7 @@ systemctl --user enable --now hid-keyboard.service
 ### 4. Configurable Options
 The input socket device and the output HID device names are customizable via environment variables:
 * `HID_SOCKET_PATH`: default `/tmp/hid_keyboard.sock`
-* `HID_DEVICE_PATH`: default `/dev/hidg0`
+* `HID_DEVICE_PATH`: default `/dev/hidg0`; use `-` for standard output stream
 
 ## Usage
 There are two types of input messages. No matter a message is a command or a regular string, the **null-delimiter** is the signal for the virtual keyboard to type the output.
