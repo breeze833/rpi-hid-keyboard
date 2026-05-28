@@ -107,7 +107,9 @@ class HIDDaemon:
 
     def _socket_reader(self):
         chunk = self._socket_conn.recv(1024)
-        return chunk.decode('utf-8', errors='ignore') if chunk else None
+        if not chunk:
+            raise EOFError("unix socket EOF")
+        return chunk.decode('utf-8', errors='ignore')
 
     def run(self):
         if self.socket_path == '-':
@@ -164,13 +166,11 @@ class HIDDaemon:
                             # Route: Implicit Text
                             else:
                                 self.type_string(line)
-                    
-                except EOFError:
+                except Exception as e:
+                    print(f"Error: {e}", file=sys.stderr)
+                finally:
                     if self.socket_path == '-':
                         sys.stdin.close()
-                except Exception as e:
-                    print(f"Communication error: {e}", file=sys.stderr)
-                finally:
                     if self._socket_conn:
                         self._socket_conn.close()
                         self._socket_conn = None

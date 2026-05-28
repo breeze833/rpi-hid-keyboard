@@ -75,15 +75,15 @@ Interact with the daemon via the Unix socket using `nc` or any application capab
 
 * **Set Target OS Mode**:
     ```bash
-    echo -ne "CMD:MODE:WINDOWS\0" | nc -U /tmp/hid_keyboard.sock
+    echo -ne "CMD:MODE:WINDOWS\0" | nc -NU /tmp/hid_keyboard.sock
 	```
 * **Send Text to Type**:
     ```bash
-    echo -ne "Hello, world.\0" | nc -U /tmp/hid_keyboard.sock
+    echo -ne "Hello, world.\0" | nc -NU /tmp/hid_keyboard.sock
     ```
 * **Send Multi-line Text to Type**:
     ```bash
-    echo -ne "Hello, world.\n\0你好\n\0" | nc -U /tmp/hid_keyboard.sock
+    echo -ne "Hello, world.\n\0你好\n\0" | nc -NU /tmp/hid_keyboard.sock
     ```
 ## Project Structure
 
