@@ -101,7 +101,9 @@ class HIDDaemon:
         ready_to_read, _, _ = select.select([sys.stdin], [], [], None)
         if ready_to_read:
             chunk = sys.stdin.read()
-        return chunk if chunk else None
+        if not chunk:
+             raise EOFError("stdin reaches EOF")
+        return chunk
 
     def _socket_reader(self):
         chunk = self._socket_conn.recv(1024)
@@ -163,6 +165,9 @@ class HIDDaemon:
                             else:
                                 self.type_string(line)
                     
+                except EOFError:
+                    if self.socket_path == '-':
+                        sys.stdin.close()
                 except Exception as e:
                     print(f"Communication error: {e}", file=sys.stderr)
                 finally:
