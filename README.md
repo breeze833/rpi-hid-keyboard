@@ -65,7 +65,7 @@ systemctl --user enable --now hid-keyboard.service
 
 ### 4. Configurable Options
 The input socket device and the output HID device names are customizable via environment variables:
-* `HID_SOCKET_PATH`: default `/tmp/hid_keyboard.sock`
+* `HID_SOCKET_PATH`: default `/tmp/hid_keyboard.sock`; use `-` for standard input stream
 * `HID_DEVICE_PATH`: default `/dev/hidg0`; use `-` for standard output stream
 
 ## Usage

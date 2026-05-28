@@ -1,6 +1,7 @@
 import socket
 import os
 import sys
+import select
 import time
 from .layout import USBKeyboardLayout
 
@@ -11,6 +12,8 @@ class HIDDaemon:
         self.os_mode = "linux"  # Default mode
         self.layout = USBKeyboardLayout()
         self.hid_handle = None
+        self.read_input = None
+        self._socket_conn = None
 
     def _write_null_report(self):
         self._write_report(self.layout.get_null_report())
@@ -94,35 +97,52 @@ class HIDDaemon:
             else:
                 self.inject_unicode(cp)
 
+    def _stdin_reader(self):
+        ready_to_read, _, _ = select.select([sys.stdin], [], [], None)
+        if ready_to_read:
+            chunk = sys.stdin.read()
+        return chunk if chunk else None
+
+    def _socket_reader(self):
+        chunk = self._socket_conn.recv(1024)
+        return chunk.decode('utf-8', errors='ignore') if chunk else None
+
     def run(self):
-        """Sets up the Unix socket listener and manages permissions."""
-        if os.path.exists(self.socket_path):
-            os.remove(self.socket_path)
+        if self.socket_path == '-':
+            self.read_input = self._stdin_reader
+            print("HID Daemon: Reading from STDIN (Press Ctrl+D to exit)", file=sys.stderr)
+        else:
+            """Sets up the Unix socket listener and manages permissions."""
+            if os.path.exists(self.socket_path):
+                os.remove(self.socket_path)
+            server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            server.bind(self.socket_path)
+            os.chmod(self.socket_path, 0o666) # Allow access from user-land services
+            server.listen(1)
+            print(f"HID Daemon started. Mode: {self.os_mode}", file=sys.stderr)
+            self.read_input = self._socket_reader
 
         if self.device_path == '-':
             self.hid_handle = sys.stdout.buffer
         else:
             # Open the HID device; requires correct permissions (group 'input')
             self.hid_handle = open(self.device_path, "wb+")
-        
-        server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        server.bind(self.socket_path)
-        os.chmod(self.socket_path, 0o666) # Allow access from user-land services
-        server.listen(1)
-        
-        print(f"HID Daemon started. Mode: {self.os_mode}", file=sys.stderr)
 
         try:
             while True:
-                conn, _ = server.accept()
+                if self.socket_path != '-':
+                    self._socket_conn, _ = server.accept()
+                else:
+                    if sys.stdin.closed:
+                        break
                 buffer = ""
                 try:
                     while True:
-                        chunk = conn.recv(1024)
+                        chunk = self.read_input()
                         if not chunk:
                             break
                         
-                        buffer += chunk.decode('utf-8', errors='ignore')
+                        buffer += chunk
                         
                         while "\0" in buffer:
                             line, buffer = buffer.split("\0", 1)
@@ -146,13 +166,16 @@ class HIDDaemon:
                 except Exception as e:
                     print(f"Communication error: {e}", file=sys.stderr)
                 finally:
-                    conn.close()
+                    if self._socket_conn:
+                        self._socket_conn.close()
+                        self._socket_conn = None
         finally:
             # Clean up file handlers unless it's a persistent standard stream
             if self.hid_handle and self.device_path != "-":
                 print("Closing hardware file descriptor.", file=sys.stderr)
                 self.hid_handle.close()
-            server.close()
+            if self.socket_path != '-':
+                server.close()
 
 if __name__ == "__main__":
     daemon = HIDDaemon()
