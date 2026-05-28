@@ -4,9 +4,9 @@ import time
 from .layout import USBKeyboardLayout
 
 class HIDDaemon:
-    def __init__(self, socket_path="/tmp/hid_keyboard.sock", device="/dev/hidg0"):
-        self.socket_path = socket_path
-        self.device_path = device
+    def __init__(self):
+        self.socket_path = os.getenv('HID_SOCKET_PATH', '/tmp/hid_keyboard.sock')
+        self.device_path = os.getenv('HID_DEVICE_PATH', '/dev/hidg0')
         self.os_mode = "linux"  # Default mode
         self.layout = USBKeyboardLayout()
         self.hid_handle = None
