@@ -7,7 +7,7 @@ ExecStart=%h/src/rpi-hid-keyboard/venv/bin/hid-keyboard-daemon
 Restart=always
 RestartSec=5
 # Customizable device names
-#Environment="HID_SOCKET_PATH=/tmp/custom_hid_keyboard.sock"
+#Environment="HID_SOCKET_PATH=/tmp/hid_keyboard.sock"
 #Environment="HID_DEVICE_PATH=/dev/hidg0"
 
 [Install]
