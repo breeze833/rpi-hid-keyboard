@@ -1,6 +1,6 @@
 [project]
 name = "rpi-hid-keyboard"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Unix socket daemon to bridge STT strings to RPi4 HID hardware."
 dependencies = []
 

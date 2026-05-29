@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="rpi-hid-keyboard",
-    version="0.1.0",
+    version="0.1.1",
     description="Generic USB HID Keyboard Bridge for RPi Gadgets",
     author="Breeze833",
     package_dir={"": "src"},

@@ -7,6 +7,8 @@ class USBKeyboardLayout:
     MOD_GUI   = 0x08  # Windows / Command Key
 
     def __init__(self):
+        self._null_report = b'\x00' * 8
+
         # --- Standard US ASCII to (Modifier, ScanCode) --- 
         self.ASCII_MAP = {
             # Lowercase a-z (0x04 - 0x1d)
@@ -68,7 +70,7 @@ class USBKeyboardLayout:
 
     def get_null_report(self):
         """Returns the 8-byte null report (all release)."""
-        return b'\x00' * 8
+        return self._null_report
 
     def _build_report(self, modifier, scancode):
         """Internal helper to construct the 8-byte buffer."""
