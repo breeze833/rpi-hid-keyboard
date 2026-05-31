@@ -41,10 +41,11 @@ Since modern Debian/DietPi environments are "externally managed," we use a Virtu
 
 ```bash
 # Create a virtual environment in the project folder
-python3 -m venv venv
+python3 -m venv .venv
+.venv/bin/pip install --upgrade pip setuptools
 
 # Install the package in editable mode within the venv
-./venv/bin/pip install -e .
+.venv/bin/pip install -e .
 ```
 
 ### 3. Enable the Systemd Service
