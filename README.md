@@ -64,6 +64,9 @@ cp systemd/hid-keyboard.service ~/.config/systemd/user/
 systemctl --user daemon-reload
 systemctl --user enable --now hid-keyboard.service
 ```
+**Note**: To access the HID device file, the `dietpi` user should be in the group `input`.
+If the service does not start and the journal logs shows permission denied,
+execute `sudo usermod -a -G input dietpi` and then rebbot.
 
 ### 4. Configurable Options
 The input socket device and the output HID device names are customizable via environment variables:
