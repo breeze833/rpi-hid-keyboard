@@ -51,6 +51,7 @@ python3 -m venv .venv
 ### 3. Enable the Systemd Service
 Depending on the system defaults, you may need to manually enable the login service:
 ```bash
+sudo apt install dubs dbus-user-sesssion
 sudo systemctl unmask systemd-logind
 sudo systemctl restart systemd-logind
 sudo loginctl enable-linger dietpi
